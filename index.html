@@ -2,33 +2,326 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Empowered Reborn</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background: #f5f7fa;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: #007bff;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+    }
+    header h1 {
+      margin: 0;
+      font-weight: 600;
+      font-size: 1.5rem;
+    }
+    header button {
+      background: transparent;
+      border: 1.5px solid white;
+      color: white;
+      padding: 0.4rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    header button:hover {
+      background-color: white;
+      color: #007bff;
+    }
+    main {
+      flex: 1;
+      padding: 1.5rem 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    #login {
+      max-width: 320px;
+      margin: 3rem auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgb(0 123 255 / 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    #login input {
+      padding: 0.7rem 1rem;
+      border: 1.5px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+    #login input:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.4);
+    }
+    #login button {
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: none;
+      background: #007bff;
+      color: white;
+      font-weight: 600;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #login button:hover {
+      background: #0056b3;
+    }
+    #authError {
+      color: #d93025;
+      font-weight: 600;
+      min-height: 1.25rem;
+    }
+    #main,
+    #classDetails,
+    #studentDetails {
+      display: none;
+    }
+    h2,
+    h3 {
+      margin-top: 0;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .fab {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 28px;
+      background: #007bff;
+      color: white;
+      border-radius: 50%;
+      padding: 15px 17px;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0, 123, 255, 0.7);
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
+    .fab:hover {
+      background: #0056b3;
+    }
+    #classes,
+    #students,
+    #assignments {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 0 12px rgb(0 0 0 / 0.05);
+      max-height: 350px;
+      overflow-y: auto;
+    }
+    #classes > div,
+    #students > div,
+    #assignments > div {
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background-color 0.2s ease;
+      font-weight: 500;
+    }
+    #classes > div:hover,
+    #students > div:hover,
+    #assignments > div:hover {
+      background: #e6f0ff;
+    }
+    #classes > div:last-child,
+    #students > div:last-child,
+    #assignments > div:last-child {
+      border-bottom: none;
+    }
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: #d93025;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0 0.3rem;
+      transition: color 0.2s ease;
+    }
+    .delete-btn:hover {
+      color: #a1261f;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 320px;
+      max-width: 90%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 1.5rem 1.75rem;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      z-index: 1000;
+    }
+    .modal.show {
+      display: block;
+    }
+    .modal label {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      display: block;
+    }
+    .modal input,
+    .modal select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border-radius: 5px;
+      border: 1.5px solid #ccc;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+    .modal input:focus,
+    .modal select:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.4);
+    }
+    .modal button {
+      background: #007bff;
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
+    }
+    .modal button:hover {
+      background: #0056b3;
+    }
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.4);
+      z-index: 999;
+    }
+    #overlay.show {
+      display: block;
+    }
+    @media (max-width: 600px) {
+      main {
+        padding: 1rem;
+      }
+      .fab {
+        padding: 12px 14px;
+        font-size: 22px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Welcome to Empowered Reborn</h1>
+  <header>
+    <h1>Empowered Reborn</h1>
+    <button id="logoutBtn" style="display:none;">Logout</button>
+  </header>
 
-    <div id="auth-section">
-      <h2>Sign Up</h2>
-      <input type="email" id="signup-email" placeholder="Email" />
-      <input type="password" id="signup-password" placeholder="Password" />
-      <button onclick="signUp()">Sign Up</button>
+  <main>
+    <section id="login">
+      <h2>Login / Sign Up</h2>
+      <input type="email" id="email" placeholder="Email" autocomplete="username" />
+      <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
+      <div style="display:flex; gap: 10px;">
+        <button onclick="signUp()">Sign Up</button>
+        <button onclick="login()">Login</button>
+      </div>
+      <div id="authError"></div>
+    </section>
 
-      <h2>Login</h2>
-      <input type="email" id="login-email" placeholder="Email" />
-      <input type="password" id="login-password" placeholder="Password" />
-      <button onclick="login()">Login</button>
-      <button onclick="logout()">Logout</button>
-    </div>
+    <section id="main">
+      <div class="section-header">
+        <h2 id="welcome"></h2>
+      </div>
+      <div id="classes">No classes registered</div>
+      <div class="fab" title="Add Class" onclick="showClassModal()">+</div>
+    </section>
 
-    <div id="user-content" style="display: none;">
-      <h2>Welcome, <span id="user-email"></span></h2>
-      <p>You are logged in to Empowered Reborn.</p>
-    </div>
+    <section id="classDetails">
+      <div class="section-header">
+        <h3 id="classTitle"></h3>
+        <button onclick="backToMain()" style="padding:0.3rem 0.7rem; cursor:pointer;">&larr; Back</button>
+      </div>
+      <div id="students">No students registered</div>
+      <div class="fab" title="Add Student" onclick="showAddStudentModal()">+</div>
+    </section>
+
+    <section id="studentDetails">
+      <div class="section-header">
+        <h3 id="studentName"></h3>
+        <button onclick="backToClass()" style="padding:0.3rem 0.7rem; cursor:pointer;">&larr; Back</button>
+      </div>
+      <div id="assignments">No assignments registered</div>
+      <div class="fab" title="Add Assignment" onclick="showAddAssignmentModal()">+</div>
+    </section>
+  </main>
+
+  <div id="overlay"></div>
+
+  <div id="classModal" class="modal">
+    <label for="className">Class Name</label>
+    <input type="text" id="className" placeholder="Class Name" />
+    <label for="gradingFormat">Grading Format</label>
+    <select id="gradingFormat">
+      <option value="EDM">E / D / M</option>
+      <option value="1-4">1 - 4</option>
+    </select>
+    <button onclick="createClass()">Create Class</button>
+  </div>
+
+  <div id="studentModal" class="modal">
+    <label for="studentNameInput">Student Name</label>
+    <input type="text" id="studentNameInput" placeholder="Student Name" />
+    <button onclick="addStudent()">Add Student</button>
+  </div>
+
+  <div id="assignmentModal" class="modal">
+    <label for="assignmentNameInput">Assignment Name</label>
+    <input type="text" id="assignmentNameInput" placeholder="Assignment Name" />
+    <label for="assignmentScoreInput">Score</label>
+    <input type="number" step="any" id="assignmentScoreInput" placeholder="Score" />
+    <button onclick="addAssignment()">Add Assignment</button>
   </div>
 
   <script>
@@ -43,50 +336,309 @@
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let userEmail = '';
+    let currentClassId = '';
+    let currentStudentId = '';
+    let currentClassFormat = '';
+
+    const loginSection = document.getElementById('login');
+    const mainSection = document.getElementById('main');
+    const classDetailsSection = document.getElementById('classDetails');
+    const studentDetailsSection = document.getElementById('studentDetails');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const authError = document.getElementById('authError');
+
+    const overlay = document.getElementById('overlay');
+    const classModal = document.getElementById('classModal');
+    const studentModal = document.getElementById('studentModal');
+    const assignmentModal = document.getElementById('assignmentModal');
+
+    function showModal(modal) {
+      modal.classList.add('show');
+      overlay.classList.add('show');
+    }
+    function hideModal(modal) {
+      modal.classList.remove('show');
+      overlay.classList.remove('show');
+    }
+    overlay.onclick = () => {
+      hideModal(classModal);
+      hideModal(studentModal);
+      hideModal(assignmentModal);
+    };
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        userEmail = user.email;
+        authError.textContent = '';
+        loginSection.style.display = 'none';
+        mainSection.style.display = 'block';
+        logoutBtn.style.display = 'inline-block';
+        document.getElementById('welcome').textContent = Welcome, ${userEmail};
+        loadClasses();
+      } else {
+        userEmail = '';
+        loginSection.style.display = 'flex';
+        mainSection.style.display = 'none';
+        classDetailsSection.style.display = 'none';
+        studentDetailsSection.style.display = 'none';
+        logoutBtn.style.display = 'none';
+        clearInputs();
+      }
+    });
+
+    function clearInputs() {
+      document.getElementById('email').value = '';
+      document.getElementById('password').value = '';
+      authError.textContent = '';
+    }
 
     function signUp() {
-      const email = document.getElementById("signup-email").value;
-      const password = document.getElementById("signup-password").value;
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      authError.textContent = '';
+
+      if (!email || !password) {
+        authError.textContent = 'Please enter email and password.';
+        return;
+      }
+
       auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          alert("Sign up successful!");
-          showUserContent(userCredential.user);
+        .then(() => {
         })
-        .catch((error) => alert(error.message));
+        .catch(error => {
+          authError.textContent = error.message;
+        });
     }
 
     function login() {
-      const email = document.getElementById("login-email").value;
-      const password = document.getElementById("login-password").value;
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      authError.textContent = '';
+
+      if (!email || !password) {
+        authError.textContent = 'Please enter email and password.';
+        return;
+      }
+
       auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          alert("Login successful!");
-          showUserContent(userCredential.user);
+        .then(() => {
         })
-        .catch((error) => alert(error.message));
+        .catch(error => {
+          authError.textContent = error.message;
+        });
     }
 
-    function logout() {
-      auth.signOut().then(() => {
-        document.getElementById("auth-section").style.display = "block";
-        document.getElementById("user-content").style.display = "none";
+    logoutBtn.onclick = () => {
+      auth.signOut();
+    };
+
+    function loadClasses() {
+      const classesDiv = document.getElementById('classes');
+      classesDiv.innerHTML = 'Loading classes...';
+
+      db.collection('classes')
+        .where('user', '==', userEmail)
+        .orderBy('createdAt', 'desc')
+        .get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            classesDiv.textContent = 'No classes registered';
+            return;
+          }
+          classesDiv.innerHTML = '';
+          snapshot.forEach(doc => {
+            const c = doc.data();
+            const div = document.createElement('div');
+            div.textContent = ${c.name} (Format: ${c.gradingFormat});
+            div.onclick = () => openClass(doc.id, c.name, c.gradingFormat);
+            classesDiv.appendChild(div);
+          });
+        })
+        .catch(error => {
+          classesDiv.textContent = 'Error loading classes.';
+          console.error(error);
+        });
+    }
+
+    function showClassModal() {
+      document.getElementById('className').value = '';
+      document.getElementById('gradingFormat').value = 'EDM';
+      showModal(classModal);
+    }
+
+    function createClass() {
+      const className = document.getElementById('className').value.trim();
+      const gradingFormat = document.getElementById('gradingFormat').value;
+
+      if (!className) {
+        alert('Class name cannot be empty.');
+        return;
+      }
+
+      db.collection('classes').add({
+        user: userEmail,
+        name: className,
+        gradingFormat: gradingFormat,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }).then(() => {
+        hideModal(classModal);
+        loadClasses();
+      }).catch(err => {
+        alert('Error creating class: ' + err.message);
       });
     }
 
-    function showUserContent(user) {
-      document.getElementById("auth-section").style.display = "none";
-      document.getElementById("user-content").style.display = "block";
-      document.getElementById("user-email").textContent = user.email;
+    function openClass(classId, className, gradingFormat) {
+      currentClassId = classId;
+      currentClassFormat = gradingFormat;
+      mainSection.style.display = 'none';
+      classDetailsSection.style.display = 'block';
+      studentDetailsSection.style.display = 'none';
+
+      document.getElementById('classTitle').textContent = className;
+      loadStudents(classId);
     }
 
-    auth.onAuthStateChanged((user) => {
-      if (user) {
-        showUserContent(user);
-      } else {
-        document.getElementById("auth-section").style.display = "block";
-        document.getElementById("user-content").style.display = "none";
+    function backToMain() {
+      currentClassId = '';
+      mainSection.style.display = 'block';
+      classDetailsSection.style.display = 'none';
+      studentDetailsSection.style.display = 'none';
+      loadClasses();
+    }
+
+    function loadStudents(classId) {
+      const studentsDiv = document.getElementById('students');
+      studentsDiv.innerHTML = 'Loading students...';
+
+      db.collection('classes').doc(classId).collection('students')
+        .orderBy('name')
+        .get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            studentsDiv.textContent = 'No students registered';
+            return;
+          }
+          studentsDiv.innerHTML = '';
+          snapshot.forEach(doc => {
+            const s = doc.data();
+            const div = document.createElement('div');
+            div.textContent = s.name;
+            div.onclick = () => openStudent(classId, doc.id, s.name);
+            studentsDiv.appendChild(div);
+          });
+        })
+        .catch(error => {
+          studentsDiv.textContent = 'Error loading students.';
+          console.error(error);
+        });
+    }
+
+    function showAddStudentModal() {
+      document.getElementById('studentNameInput').value = '';
+      showModal(studentModal);
+    }
+
+    function addStudent() {
+      const studentName = document.getElementById('studentNameInput').value.trim();
+
+      if (!studentName) {
+        alert('Student name cannot be empty.');
+        return;
       }
-    });
+
+      db.collection('classes').doc(currentClassId).collection('students')
+        .add({
+          name: studentName,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        }).then(() => {
+          hideModal(studentModal);
+          loadStudents(currentClassId);
+        }).catch(err => {
+          alert('Error adding student: ' + err.message);
+        });
+    }
+
+    function openStudent(classId, studentId, studentName) {
+      currentStudentId = studentId;
+      mainSection.style.display = 'none';
+      classDetailsSection.style.display = 'none';
+      studentDetailsSection.style.display = 'block';
+
+      document.getElementById('studentName').textContent = studentName;
+      loadAssignments(classId, studentId);
+    }
+
+    function backToClass() {
+      currentStudentId = '';
+      mainSection.style.display = 'none';
+      classDetailsSection.style.display = 'block';
+      studentDetailsSection.style.display = 'none';
+      loadStudents(currentClassId);
+    }
+
+    function loadAssignments(classId, studentId) {
+      const assignmentsDiv = document.getElementById('assignments');
+      assignmentsDiv.innerHTML = 'Loading assignments...';
+
+      db.collection('classes').doc(classId).collection('students').doc(studentId)
+        .collection('assignments')
+        .orderBy('createdAt', 'desc')
+        .get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            assignmentsDiv.textContent = 'No assignments registered';
+            return;
+          }
+          assignmentsDiv.innerHTML = '';
+          snapshot.forEach(doc => {
+            const a = doc.data();
+            const div = document.createElement('div');
+            div.textContent = ${a.name}: ${a.score};
+            assignmentsDiv.appendChild(div);
+          });
+        })
+        .catch(error => {
+          assignmentsDiv.textContent = 'Error loading assignments.';
+          console.error(error);
+        });
+    }
+
+    function showAddAssignmentModal() {
+      document.getElementById('assignmentNameInput').value = '';
+      document.getElementById('assignmentScoreInput').value = '';
+      showModal(assignmentModal);
+    }
+
+    function addAssignment() {
+      const assignmentName = document.getElementById('assignmentNameInput').value.trim();
+      const assignmentScore = parseFloat(document.getElementById('assignmentScoreInput').value);
+
+      if (!assignmentName) {
+        alert('Assignment name cannot be empty.');
+        return;
+      }
+      if (isNaN(assignmentScore)) {
+        alert('Please enter a valid score.');
+        return;
+      }
+
+      db.collection('classes').doc(currentClassId).collection('students').doc(currentStudentId)
+        .collection('assignments')
+        .add({
+          name: assignmentName,
+          score: assignmentScore,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        }).then(() => {
+          hideModal(assignmentModal);
+          loadAssignments(currentClassId, currentStudentId);
+        }).catch(err => {
+          alert('Error adding assignment: ' + err.message);
+        });
+    }
   </script>
 </body>
 </html>
