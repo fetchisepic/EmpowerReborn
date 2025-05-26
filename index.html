@@ -376,7 +376,8 @@
         loginSection.style.display = 'none';
         mainSection.style.display = 'block';
         logoutBtn.style.display = 'inline-block';
-        document.getElementById('welcome').textContent = Welcome, ${userEmail};
+        document.getElementById('welcome').textContent = `Welcome, ${userEmail}`;
+
         loadClasses();
       } else {
         userEmail = '';
