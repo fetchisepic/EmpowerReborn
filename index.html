@@ -430,6 +430,12 @@
       auth.signOut();
     };
 
+    function backToClass() {
+      studentDetailsSection.style.display = 'none';
+      classDetailsSection.style.display = 'block';
+      loadStudents(currentClassId);
+    }
+
     function loadClasses() {
       const classesDiv = document.getElementById('classes');
       classesDiv.innerHTML = 'Loading classes...';
