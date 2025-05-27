@@ -7,12 +7,9 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <link
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-    rel="stylesheet"
-  />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
   <style>
-    * {
+   * {
       box-sizing: border-box;
     }
     body {
@@ -323,7 +320,6 @@
     <input type="number" step="any" id="assignmentScoreInput" placeholder="Score" />
     <button onclick="addAssignment()">Add Assignment</button>
   </div>
-
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyBxGeeo9JJ84wPVw1Vvo5zRcI29AlNq6zQ",
@@ -377,7 +373,6 @@
         mainSection.style.display = 'block';
         logoutBtn.style.display = 'inline-block';
         document.getElementById('welcome').textContent = `Welcome, ${userEmail}`;
-
         loadClasses();
       } else {
         userEmail = '';
@@ -400,15 +395,11 @@
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
       authError.textContent = '';
-
       if (!email || !password) {
         authError.textContent = 'Please enter email and password.';
         return;
       }
-
       auth.createUserWithEmailAndPassword(email, password)
-        .then(() => {
-        })
         .catch(error => {
           authError.textContent = error.message;
         });
@@ -418,15 +409,11 @@
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
       authError.textContent = '';
-
       if (!email || !password) {
         authError.textContent = 'Please enter email and password.';
         return;
       }
-
       auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-        })
         .catch(error => {
           authError.textContent = error.message;
         });
@@ -439,7 +426,6 @@
     function loadClasses() {
       const classesDiv = document.getElementById('classes');
       classesDiv.innerHTML = 'Loading classes...';
-
       db.collection('classes')
         .where('user', '==', userEmail)
         .orderBy('createdAt', 'desc')
@@ -453,7 +439,7 @@
           snapshot.forEach(doc => {
             const c = doc.data();
             const div = document.createElement('div');
-            div.textContent = ${c.name} (Format: ${c.gradingFormat});
+            div.textContent = `${c.name} (Format: ${c.gradingFormat})`;
             div.onclick = () => openClass(doc.id, c.name, c.gradingFormat);
             classesDiv.appendChild(div);
           });
@@ -473,12 +459,10 @@
     function createClass() {
       const className = document.getElementById('className').value.trim();
       const gradingFormat = document.getElementById('gradingFormat').value;
-
       if (!className) {
         alert('Class name cannot be empty.');
         return;
       }
-
       db.collection('classes').add({
         user: userEmail,
         name: className,
@@ -498,7 +482,6 @@
       mainSection.style.display = 'none';
       classDetailsSection.style.display = 'block';
       studentDetailsSection.style.display = 'none';
-
       document.getElementById('classTitle').textContent = className;
       loadStudents(classId);
     }
@@ -514,7 +497,6 @@
     function loadStudents(classId) {
       const studentsDiv = document.getElementById('students');
       studentsDiv.innerHTML = 'Loading students...';
-
       db.collection('classes').doc(classId).collection('students')
         .orderBy('name')
         .get()
@@ -545,12 +527,10 @@
 
     function addStudent() {
       const studentName = document.getElementById('studentNameInput').value.trim();
-
       if (!studentName) {
         alert('Student name cannot be empty.');
         return;
       }
-
       db.collection('classes').doc(currentClassId).collection('students')
         .add({
           name: studentName,
@@ -568,7 +548,6 @@
       mainSection.style.display = 'none';
       classDetailsSection.style.display = 'none';
       studentDetailsSection.style.display = 'block';
-
       document.getElementById('studentName').textContent = studentName;
       loadAssignments(classId, studentId);
     }
@@ -581,11 +560,46 @@
       loadStudents(currentClassId);
     }
 
+    function showAddAssignmentModal() {
+      document.getElementById('assignmentNameInput').value = '';
+      document.getElementById('assignmentScoreInput').value = '';
+      showModal(assignmentModal);
+    }
+
+    function addAssignment() {
+      const assignmentName = document.getElementById('assignmentNameInput').value.trim();
+      const score = parseFloat(document.getElementById('assignmentScoreInput').value);
+      if (!assignmentName || isNaN(score)) {
+        alert('Please provide a valid assignment name and score.');
+        return;
+      }
+
+      db.collection('classes')
+        .doc(currentClassId)
+        .collection('students')
+        .doc(currentStudentId)
+        .collection('assignments')
+        .add({
+          name: assignmentName,
+          score: score,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        })
+        .then(() => {
+          hideModal(assignmentModal);
+          loadAssignments(currentClassId, currentStudentId);
+        })
+        .catch(err => {
+          alert('Error adding assignment: ' + err.message);
+        });
+    }
+
     function loadAssignments(classId, studentId) {
       const assignmentsDiv = document.getElementById('assignments');
       assignmentsDiv.innerHTML = 'Loading assignments...';
-
-      db.collection('classes').doc(classId).collection('students').doc(studentId)
+      db.collection('classes')
+        .doc(classId)
+        .collection('students')
+        .doc(studentId)
         .collection('assignments')
         .orderBy('createdAt', 'desc')
         .get()
@@ -598,46 +612,13 @@
           snapshot.forEach(doc => {
             const a = doc.data();
             const div = document.createElement('div');
-            div.textContent = ${a.name}: ${a.score};
+            div.textContent = `${a.name} — Score: ${a.score}`;
             assignmentsDiv.appendChild(div);
           });
         })
-        .catch(error => {
+        .catch(err => {
           assignmentsDiv.textContent = 'Error loading assignments.';
-          console.error(error);
-        });
-    }
-
-    function showAddAssignmentModal() {
-      document.getElementById('assignmentNameInput').value = '';
-      document.getElementById('assignmentScoreInput').value = '';
-      showModal(assignmentModal);
-    }
-
-    function addAssignment() {
-      const assignmentName = document.getElementById('assignmentNameInput').value.trim();
-      const assignmentScore = parseFloat(document.getElementById('assignmentScoreInput').value);
-
-      if (!assignmentName) {
-        alert('Assignment name cannot be empty.');
-        return;
-      }
-      if (isNaN(assignmentScore)) {
-        alert('Please enter a valid score.');
-        return;
-      }
-
-      db.collection('classes').doc(currentClassId).collection('students').doc(currentStudentId)
-        .collection('assignments')
-        .add({
-          name: assignmentName,
-          score: assignmentScore,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        }).then(() => {
-          hideModal(assignmentModal);
-          loadAssignments(currentClassId, currentStudentId);
-        }).catch(err => {
-          alert('Error adding assignment: ' + err.message);
+          console.error(err);
         });
     }
   </script>
