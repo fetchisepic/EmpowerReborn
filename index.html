@@ -500,49 +500,129 @@
       db.collection('classes').doc(classId).collection('students')
         .orderBy('name')
         .get()
-        .then(snapshot => {
+        .then(async snapshot => {
           if (snapshot.empty) {
             studentsDiv.textContent = 'No students registered';
             return;
           }
           studentsDiv.innerHTML = '';
-          snapshot.forEach(doc => {
+          for (const doc of snapshot.docs) {
             const s = doc.data();
+            const studentId = doc.id;
+
+            let avgScore = null;
+            try {
+              const assignmentsSnap = await db.collection('classes').doc(classId)
+                .collection('students').doc(studentId)
+                .collection('assignments').get();
+    
+              if (!assignmentsSnap.empty) {
+                let sum = 0, count = 0;
+                assignmentsSnap.forEach(aDoc => {
+                  const aData = aDoc.data();
+                  if (typeof aData.score === 'number') {
+                    sum += aData.score;
+                    count++;
+                  }
+                });
+                if (count > 0) avgScore = sum / count;
+              }
+            } catch (e) {
+              console.error('Error loading assignments for average:', e);
+            }
+    
             const div = document.createElement('div');
-            div.textContent = s.name;
-            div.onclick = () => openStudent(classId, doc.id, s.name);
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+    
+            const leftSpan = document.createElement('span');
+            leftSpan.style.flex = '1';
+            leftSpan.style.cursor = 'pointer';
+
+            let gradeDisplay = '';
+            if (currentClassFormat === '1-4' && avgScore !== null) {
+              gradeDisplay = ` (Avg: ${avgScore.toFixed(2)})`;
+            } else if (currentClassFormat === 'EDM') {
+              const gradeSelect = document.createElement('select');
+              ['E', 'D', 'M'].forEach(optionValue => {
+                const option = document.createElement('option');
+                option.value = optionValue;
+                option.textContent = optionValue;
+                gradeSelect.appendChild(option);
+              });
+              db.collection('classes').doc(classId)
+                .collection('students').doc(studentId)
+                .get().then(docSnap => {
+                  if (docSnap.exists) {
+                    const data = docSnap.data();
+                    if (data.gradeEDM) gradeSelect.value = data.gradeEDM;
+                  }
+                });
+              gradeSelect.onchange = () => {
+                db.collection('classes').doc(classId)
+                  .collection('students').doc(studentId)
+                  .update({ gradeEDM: gradeSelect.value })
+                  .catch(console.error);
+              };
+              leftSpan.appendChild(document.createTextNode(s.name + ' '));
+              leftSpan.appendChild(gradeSelect);
+              leftSpan.style.flex = '1';
+              leftSpan.onclick = () => openStudent(classId, studentId, s.name);
+              div.appendChild(leftSpan);
+            }
+    
+            if (currentClassFormat !== 'EDM') {
+              leftSpan.textContent = s.name + gradeDisplay;
+              leftSpan.onclick = () => openStudent(classId, studentId, s.name);
+              div.appendChild(leftSpan);
+            }
+    
+            const editBtn = document.createElement('button');
+            editBtn.textContent = '✎';
+            editBtn.title = 'Edit Student Name';
+            editBtn.style.marginRight = '8px';
+            editBtn.onclick = (e) => {
+              e.stopPropagation();
+              const newName = prompt('Edit student name:', s.name);
+              if (newName && newName.trim() !== '') {
+                db.collection('classes').doc(classId).collection('students').doc(studentId)
+                  .update({ name: newName.trim() })
+                  .then(() => loadStudents(classId));
+              }
+            };
+    
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '🗑';
+            deleteBtn.title = 'Delete Student';
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.onclick = (e) => {
+              e.stopPropagation();
+              if (confirm(`Delete student "${s.name}" and all their assignments?`)) {
+                const studentRef = db.collection('classes').doc(classId).collection('students').doc(studentId);
+                studentRef.collection('assignments').get().then(asnap => {
+                  const batch = db.batch();
+                  asnap.forEach(aDoc => batch.delete(aDoc.ref));
+                  batch.delete(studentRef);
+                  return batch.commit();
+                }).then(() => {
+                  loadStudents(classId);
+                }).catch(err => alert('Error deleting student: ' + err.message));
+              }
+            };
+    
+            div.appendChild(editBtn);
+            div.appendChild(deleteBtn);
+    
             studentsDiv.appendChild(div);
-          });
+          }
         })
         .catch(error => {
           studentsDiv.textContent = 'Error loading students.';
           console.error(error);
         });
     }
-
-    function showAddStudentModal() {
-      document.getElementById('studentNameInput').value = '';
-      showModal(studentModal);
-    }
-
-    function addStudent() {
-      const studentName = document.getElementById('studentNameInput').value.trim();
-      if (!studentName) {
-        alert('Student name cannot be empty.');
-        return;
-      }
-      db.collection('classes').doc(currentClassId).collection('students')
-        .add({
-          name: studentName,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        }).then(() => {
-          hideModal(studentModal);
-          loadStudents(currentClassId);
-        }).catch(err => {
-          alert('Error adding student: ' + err.message);
-        });
-    }
-
+    
     function openStudent(classId, studentId, studentName) {
       currentStudentId = studentId;
       mainSection.style.display = 'none';
@@ -551,48 +631,7 @@
       document.getElementById('studentName').textContent = studentName;
       loadAssignments(classId, studentId);
     }
-
-    function backToClass() {
-      currentStudentId = '';
-      mainSection.style.display = 'none';
-      classDetailsSection.style.display = 'block';
-      studentDetailsSection.style.display = 'none';
-      loadStudents(currentClassId);
-    }
-
-    function showAddAssignmentModal() {
-      document.getElementById('assignmentNameInput').value = '';
-      document.getElementById('assignmentScoreInput').value = '';
-      showModal(assignmentModal);
-    }
-
-    function addAssignment() {
-      const assignmentName = document.getElementById('assignmentNameInput').value.trim();
-      const score = parseFloat(document.getElementById('assignmentScoreInput').value);
-      if (!assignmentName || isNaN(score)) {
-        alert('Please provide a valid assignment name and score.');
-        return;
-      }
-
-      db.collection('classes')
-        .doc(currentClassId)
-        .collection('students')
-        .doc(currentStudentId)
-        .collection('assignments')
-        .add({
-          name: assignmentName,
-          score: score,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        })
-        .then(() => {
-          hideModal(assignmentModal);
-          loadAssignments(currentClassId, currentStudentId);
-        })
-        .catch(err => {
-          alert('Error adding assignment: ' + err.message);
-        });
-    }
-
+    
     function loadAssignments(classId, studentId) {
       const assignmentsDiv = document.getElementById('assignments');
       assignmentsDiv.innerHTML = 'Loading assignments...';
@@ -611,14 +650,145 @@
           assignmentsDiv.innerHTML = '';
           snapshot.forEach(doc => {
             const a = doc.data();
+            const assignmentId = doc.id;
+    
             const div = document.createElement('div');
-            div.textContent = `${a.name} — Score: ${a.score}`;
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+    
+            const leftSpan = document.createElement('span');
+            leftSpan.textContent = `${a.name} — Score: ${a.score}`;
+            leftSpan.style.flex = '1';
+    
+            const editBtn = document.createElement('button');
+            editBtn.textContent = '✎';
+            editBtn.title = 'Edit Assignment';
+            editBtn.style.marginRight = '8px';
+            editBtn.onclick = () => {
+              const newName = prompt('Edit assignment name:', a.name);
+              if (newName === null) return; // canceled
+              const newScoreStr = prompt('Edit assignment score:', a.score);
+              if (newScoreStr === null) return;
+              const newScore = parseFloat(newScoreStr);
+              if (!newName.trim() || isNaN(newScore)) {
+                alert('Invalid name or score.');
+                return;
+              }
+              db.collection('classes').doc(classId)
+                .collection('students').doc(studentId)
+                .collection('assignments').doc(assignmentId)
+                .update({ name: newName.trim(), score: newScore })
+                .then(() => loadAssignments(classId, studentId))
+                .catch(err => alert('Error updating assignment: ' + err.message));
+            };
+    
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '🗑';
+            deleteBtn.title = 'Delete Assignment';
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.onclick = () => {
+              if (confirm(`Delete assignment "${a.name}"?`)) {
+                db.collection('classes').doc(classId)
+                  .collection('students').doc(studentId)
+                  .collection('assignments').doc(assignmentId)
+                  .delete()
+                  .then(() => loadAssignments(classId, studentId))
+                  .catch(err => alert('Error deleting assignment: ' + err.message));
+              }
+            };
+    
+            div.appendChild(leftSpan);
+            div.appendChild(editBtn);
+            div.appendChild(deleteBtn);
+    
             assignmentsDiv.appendChild(div);
           });
         })
         .catch(err => {
           assignmentsDiv.textContent = 'Error loading assignments.';
           console.error(err);
+        });
+    }
+    
+    function loadClasses() {
+      const classesDiv = document.getElementById('classes');
+      classesDiv.innerHTML = 'Loading classes...';
+      db.collection('classes')
+        .where('user', '==', userEmail)
+        .orderBy('createdAt', 'desc')
+        .get()
+        .then(snapshot => {
+          if (snapshot.empty) {
+            classesDiv.textContent = 'No classes registered';
+            return;
+          }
+          classesDiv.innerHTML = '';
+          snapshot.forEach(doc => {
+            const c = doc.data();
+            const classId = doc.id;
+    
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+    
+            const leftSpan = document.createElement('span');
+            leftSpan.style.flex = '1';
+            leftSpan.style.cursor = 'pointer';
+            leftSpan.textContent = `${c.name} (Format: ${c.gradingFormat})`;
+            leftSpan.onclick = () => openClass(classId, c.name, c.gradingFormat);
+
+            const editBtn = document.createElement('button');
+            editBtn.textContent = '✎';
+            editBtn.title = 'Edit Class Name';
+            editBtn.style.marginRight = '8px';
+            editBtn.onclick = (e) => {
+              e.stopPropagation();
+              const newName = prompt('Edit class name:', c.name);
+              if (newName && newName.trim() !== '') {
+                db.collection('classes').doc(classId)
+                  .update({ name: newName.trim() })
+                  .then(() => loadClasses());
+              }
+            };
+    
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '🗑';
+            deleteBtn.title = 'Delete Class';
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.onclick = (e) => {
+              e.stopPropagation();
+              if (confirm(`Delete class "${c.name}" and all students & assignments?`)) {
+                const classRef = db.collection('classes').doc(classId);
+                classRef.collection('students').get().then(studentsSnap => {
+                  const batch = db.batch();
+                  const studentDeletes = [];
+                  studentsSnap.forEach(studentDoc => {
+                    studentDeletes.push(studentDoc.ref.collection('assignments').get().then(assignSnap => {
+                      assignSnap.forEach(aDoc => batch.delete(aDoc.ref));
+                      batch.delete(studentDoc.ref);
+                    }));
+                  });
+                  Promise.all(studentDeletes).then(() => {
+                    batch.delete(classRef);
+                    return batch.commit();
+                  }).then(() => loadClasses())
+                    .catch(err => alert('Error deleting class: ' + err.message));
+                });
+              }
+            };
+    
+            div.appendChild(leftSpan);
+            div.appendChild(editBtn);
+            div.appendChild(deleteBtn);
+    
+            classesDiv.appendChild(div);
+          });
+        })
+        .catch(error => {
+          classesDiv.textContent = 'Error loading classes.';
+          console.error(error);
         });
     }
   </script>
