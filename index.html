@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Empowere Reborn</title>
+  <title>Empower Reborn</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -791,6 +791,60 @@
           console.error(error);
         });
     }
-  </script>
+    function showAddStudentModal() {
+    document.getElementById('studentNameInput').value = '';
+    showModal(studentModal);
+  }
+
+  function addStudent() {
+    const studentName = document.getElementById('studentNameInput').value.trim();
+    if (!studentName) {
+      alert('Student name cannot be empty.');
+      return;
+    }
+
+    db.collection('classes').doc(currentClassId).collection('students').add({
+      name: studentName,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }).then(() => {
+      hideModal(studentModal);
+      loadStudents(currentClassId);
+    }).catch(err => {
+      alert('Error adding student: ' + err.message);
+    });
+  }
+
+  function showAddAssignmentModal() {
+    document.getElementById('assignmentNameInput').value = '';
+    document.getElementById('assignmentScoreInput').value = '';
+    showModal(assignmentModal);
+  }
+
+  function addAssignment() {
+    const assignmentName = document.getElementById('assignmentNameInput').value.trim();
+    const score = parseFloat(document.getElementById('assignmentScoreInput').value);
+
+    if (!assignmentName || isNaN(score)) {
+      alert('Please enter a valid name and score.');
+      return;
+    }
+
+    db.collection('classes').doc(currentClassId)
+      .collection('students').doc(currentStudentId)
+      .collection('assignments')
+      .add({
+        name: assignmentName,
+        score: score,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      })
+      .then(() => {
+        hideModal(assignmentModal);
+        loadAssignments(currentClassId, currentStudentId);
+      })
+      .catch(err => {
+        alert('Error adding assignment: ' + err.message);
+      });
+  }
+</script>
 </body>
 </html>
