@@ -316,8 +316,15 @@
   <div id="assignmentModal" class="modal">
     <label for="assignmentNameInput">Assignment Name</label>
     <input type="text" id="assignmentNameInput" placeholder="Assignment Name" />
-    <label for="assignmentScoreInput">Score</label>
+    <label for="assignmentScoreInput" id="scoreLabel">Score</label>
     <input type="number" step="any" id="assignmentScoreInput" placeholder="Score" />
+    
+    <select id="assignmentScoreDropdown" style="display:none;">
+      <option value="E">E</option>
+      <option value="D">D</option>
+      <option value="M">M</option>
+    </select>
+
     <button onclick="addAssignment()">Add Assignment</button>
   </div>
   <script>
@@ -817,17 +824,41 @@
   function showAddAssignmentModal() {
     document.getElementById('assignmentNameInput').value = '';
     document.getElementById('assignmentScoreInput').value = '';
+    const scoreInput = document.getElementById('assignmentScoreInput');
+    const scoreDropdown = document.getElementById('assignmentScoreDropdown');
+    const label = document.getElementById('scoreLabel');
+  
+    if (currentClassFormat === 'EDM') {
+      scoreInput.style.display = 'none';
+      scoreDropdown.style.display = 'block';
+      label.textContent = 'Grade (E/D/M)';
+    } else {
+      scoreInput.style.display = 'block';
+      scoreDropdown.style.display = 'none';
+      label.textContent = 'Score';
+    }
+  
     showModal(assignmentModal);
   }
 
+
   function addAssignment() {
     const assignmentName = document.getElementById('assignmentNameInput').value.trim();
-    const score = parseFloat(document.getElementById('assignmentScoreInput').value);
-
-    if (!assignmentName || isNaN(score)) {
-      alert('Please enter a valid name and score.');
-      return;
+    let score;
+    if (currentClassFormat === 'EDM') {
+      score = document.getElementById('assignmentScoreDropdown').value;
+      if (!assignmentName || !score) {
+        alert('Please enter assignment name and select a grade.');
+        return;
+      }
+    } else {
+      score = parseFloat(document.getElementById('assignmentScoreInput').value);
+      if (!assignmentName || isNaN(score)) {
+        alert('Please enter a valid name and score.');
+        return;
+      }
     }
+
 
     db.collection('classes').doc(currentClassId)
       .collection('students').doc(currentStudentId)
