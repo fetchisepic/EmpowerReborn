@@ -311,7 +311,21 @@
     <label for="studentNameInput">Student Name</label> <input type="text" id="studentNameInput" placeholder="Student Name"> <button onclick="addStudent()">Add Student</button>
   </div>
   <div id="assignmentModal" class="modal">
-    <label for="assignmentNameInput">Assignment Name</label> <input type="text" id="assignmentNameInput" placeholder="Assignment Name"> <label for="assignmentScoreInput" id="scoreLabel">Score</label> <input type="number" step="any" id="assignmentScoreInput" placeholder="Score"> <button onclick="addAssignment()">Add Assignment</button>
+    <label for="assignmentNameInput">Assignment Name</label>
+<input type="text" id="assignmentNameInput" placeholder="Assignment Name">
+
+<label for="assignmentScoreInput" id="scoreLabel">Score</label>
+<input type="number" step="any" id="assignmentScoreInput" placeholder="Score">
+
+<select id="assignmentScoreDropdown" style="display: none;">
+  <option value="">Select Grade</option>
+  <option value="E">E</option>
+  <option value="D">D</option>
+  <option value="M">M</option>
+</select>
+
+<button onclick="addAssignment()">Add Assignment</button>
+
   </div>
   <script>
     const firebaseConfig = {
