@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Empower Reborn</title>
   <link rel="icon" href="https://raw.githubusercontent.com/fetchisepic/EmpowerReborn/refs/heads/main/favicon.ico" type="image/x-icon">
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <style>
    * {
       box-sizing: border-box;
@@ -252,75 +252,66 @@
 </head>
 <body>
   <header>
-    <h1>Empower Reborn</h1>
-    <button id="logoutBtn" style="display:none;">Logout</button>
+    <h1>Empower Reborn</h1><button id="logoutBtn" style="display:none;">Logout</button>
   </header>
-
   <main>
     <section id="login">
-      <h2>Login / Sign Up</h2>
-      <input type="email" id="email" placeholder="Email" autocomplete="username" />
-      <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
+      <h2>Login / Sign Up</h2><input type="email" id="email" placeholder="Email" autocomplete="username"> <input type="password" id="password" placeholder="Password" autocomplete="current-password">
       <div style="display:flex; gap: 10px;">
-        <button onclick="signUp()">Sign Up</button>
-        <button onclick="login()">Login</button>
+        <button onclick="signUp()">Sign Up</button> <button onclick="login()">Login</button>
       </div>
       <div id="authError"></div>
     </section>
-
     <section id="main">
       <div class="section-header">
         <h2 id="welcome"></h2>
       </div>
-      <div id="classes">No classes registered</div>
-      <div class="fab" title="Add Class" onclick="showClassModal()">+</div>
+      <div id="classes">
+        No classes registered
+      </div>
+      <div class="fab" title="Add Class" onclick="showClassModal()">
+        +
+      </div>
     </section>
-
     <section id="classDetails">
       <div class="section-header">
-        <h3 id="classTitle"></h3>
-        <button onclick="backToMain()" style="padding:0.3rem 0.7rem; cursor:pointer;">&larr; Back</button>
+        <h3 id="classTitle"></h3><button onclick="backToMain()" style="padding:0.3rem 0.7rem; cursor:pointer;">← Back</button>
       </div>
-      <div id="students">No students registered</div>
-      <div class="fab" title="Add Student" onclick="showAddStudentModal()">+</div>
+      <div id="students">
+        No students registered
+      </div>
+      <div class="fab" title="Add Student" onclick="showAddStudentModal()">
+        +
+      </div>
     </section>
-
     <section id="studentDetails">
       <div class="section-header">
-        <h3 id="studentName"></h3>
-        <button onclick="backToClass()" style="padding:0.3rem 0.7rem; cursor:pointer;">&larr; Back</button>
+        <h3 id="studentName"></h3><button onclick="backToClass()" style="padding:0.3rem 0.7rem; cursor:pointer;">← Back</button>
       </div>
-      <div id="assignments">No assignments registered</div>
-      <div class="fab" title="Add Assignment" onclick="showAddAssignmentModal()">+</div>
+      <div id="assignments">
+        No assignments registered
+      </div>
+      <div class="fab" title="Add Assignment" onclick="showAddAssignmentModal()">
+        +
+      </div>
     </section>
   </main>
-
   <div id="overlay"></div>
-
   <div id="classModal" class="modal">
-    <label for="className">Class Name</label>
-    <input type="text" id="className" placeholder="Class Name" />
-    <label for="gradingFormat">Grading Format</label>
-    <select id="gradingFormat">
-      <option value="EDM">E / D / M</option>
-      <option value="1-4">1 - 4</option>
-    </select>
-    <button onclick="createClass()">Create Class</button>
+    <label for="className">Class Name</label> <input type="text" id="className" placeholder="Class Name"> <label for="gradingFormat">Grading Format</label> <select id="gradingFormat">
+      <option value="EDM">
+        E / D / M
+      </option>
+      <option value="1-4">
+        1 - 4
+      </option>
+    </select> <button onclick="createClass()">Create Class</button>
   </div>
-
   <div id="studentModal" class="modal">
-    <label for="studentNameInput">Student Name</label>
-    <input type="text" id="studentNameInput" placeholder="Student Name" />
-    <button onclick="addStudent()">Add Student</button>
+    <label for="studentNameInput">Student Name</label> <input type="text" id="studentNameInput" placeholder="Student Name"> <button onclick="addStudent()">Add Student</button>
   </div>
-
   <div id="assignmentModal" class="modal">
-    <label for="assignmentNameInput">Assignment Name</label>
-    <input type="text" id="assignmentNameInput" placeholder="Assignment Name" />
-    <label for="assignmentScoreInput" id="scoreLabel">Score</label>
-    <input type="number" step="any" id="assignmentScoreInput" placeholder="Score" />
-
-    <button onclick="addAssignment()">Add Assignment</button>
+    <label for="assignmentNameInput">Assignment Name</label> <input type="text" id="assignmentNameInput" placeholder="Assignment Name"> <label for="assignmentScoreInput" id="scoreLabel">Score</label> <input type="number" step="any" id="assignmentScoreInput" placeholder="Score"> <button onclick="addAssignment()">Add Assignment</button>
   </div>
   <script>
     const firebaseConfig = {
@@ -828,7 +819,7 @@
     const scoreInput = document.getElementById('assignmentScoreInput');
     const scoreDropdown = document.getElementById('assignmentScoreDropdown');
     const label = document.getElementById('scoreLabel');
-  
+
     if (currentClassFormat === 'EDM') {
       scoreInput.style.display = 'none';
       scoreDropdown.style.display = 'block';
@@ -838,7 +829,7 @@
       scoreDropdown.style.display = 'none';
       label.textContent = 'Score';
     }
-  
+
     showModal(assignmentModal);
   }
 
@@ -877,6 +868,6 @@
         alert('Error adding assignment: ' + err.message);
       });
   }
-</script>
+  </script>
 </body>
 </html>
